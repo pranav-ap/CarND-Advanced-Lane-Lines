@@ -12,11 +12,6 @@ imgpoints = []
 
 
 def calib():
-    """
-    To get an undistorted image, we need camera matrix & distortion coefficient
-    Calculate them with 9*6 20 chessboard images
-    """
-
     objp = np.zeros((6 * 9, 3), np.float32)
     objp[:, :2] = np.mgrid[0:9, 0:6].T.reshape(-1, 2)
 
@@ -41,5 +36,4 @@ def calib():
 
 
 def undistort(img, mtx, dist):
-    """ undistort image """
     return cv2.undistort(img, mtx, dist, None, mtx)

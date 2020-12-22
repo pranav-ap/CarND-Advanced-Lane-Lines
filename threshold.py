@@ -3,15 +3,11 @@ import cv2
 
 
 def sobel_xy(img, orient='x', thresh=(20, 100)):
-    """
-    Define a function that applies Sobel x or y.
-    The gradient in the x-direction emphasizes edges closer to vertical.
-    The gradient in the y-direction emphasizes edges closer to horizontal.
-    """
+    abs_sobel = None
 
     if orient == 'x':
         abs_sobel = np.absolute(cv2.Sobel(img, cv2.CV_64F, 1, 0))
-    if orient == 'y':
+    elif orient == 'y':
         abs_sobel = np.absolute(cv2.Sobel(img, cv2.CV_64F, 0, 1))
 
     scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
@@ -23,11 +19,6 @@ def sobel_xy(img, orient='x', thresh=(20, 100)):
 
 
 def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
-    """
-    Define a function to return the magnitude of the gradient
-    for a given sobel kernel size and threshold values
-    """
-
     sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
     sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
 
@@ -44,10 +35,6 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
 
 
 def dir_thresh(img, sobel_kernel=3, thresh=(0.7, 1.3)):
-    """
-    computes the direction of the gradient
-    """
-
     sobelx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
     sobely = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
 
@@ -64,30 +51,7 @@ def ch_thresh(ch, thresh=(80, 255)):
     return binary
 
 
-def gradient_combine(img, th_x, th_y, th_mag, th_dir):
-    """
-    Find lane lines with gradient information of Red channel
-    """
-    rows, cols = img.shape[:2]
-    R = img[220:rows - 12, 0:cols, 2]
-
-    sobelx = sobel_xy(R, 'x', th_x)
-
-    sobely = sobel_xy(R, 'y', th_y)
-
-    mag_img = mag_thresh(R, 3, th_mag)
-
-    dir_img = dir_thresh(R, 15, th_dir)
-
-    gradient_comb = np.zeros_like(dir_img).astype(np.uint8)
-    gradient_comb[((sobelx > 1) & (mag_img > 1) & (dir_img > 1))
-                  | ((sobelx > 1) & (sobely > 1))] = 255
-
-    return gradient_comb
-
-
 def hls_combine(img, th_h, th_l, th_s):
-
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
 
     rows, cols = img.shape[:2]
@@ -111,11 +75,27 @@ def hls_combine(img, th_h, th_l, th_s):
     return hls_comb
 
 
-def comb_result(grad, hls):
-    """ give different value to distinguish them """
-    result = np.zeros_like(hls).astype(np.uint8)
+def gradient_combine(img, th_x, th_y, th_mag, th_dir):
+    rows, cols = img.shape[:2]
+    R = img[220:rows - 12, 0:cols, 2]
 
+    sobelx = sobel_xy(R, 'x', th_x)
+
+    sobely = sobel_xy(R, 'y', th_y)
+
+    mag_img = mag_thresh(R, 3, th_mag)
+
+    dir_img = dir_thresh(R, 15, th_dir)
+
+    gradient_comb = np.zeros_like(dir_img).astype(np.uint8)
+    gradient_comb[((sobelx > 1) & (mag_img > 1) & (dir_img > 1))
+                  | ((sobelx > 1) & (sobely > 1))] = 255
+
+    return gradient_comb
+
+
+def comb_result(grad, hls):
+    result = np.zeros_like(hls).astype(np.uint8)
     result[(grad > 1)] = 100
     result[(hls > 1)] = 255
-
     return result
